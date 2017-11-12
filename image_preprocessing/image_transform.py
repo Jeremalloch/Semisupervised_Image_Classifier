@@ -1,5 +1,7 @@
 from PIL import Image
+import numpy as np
 import os, sys, random
+import pdb
 
 
 CROP_SIZE = 225
@@ -15,23 +17,30 @@ for infile in sys.argv[1:]:
 
 def color_channel_jitter(image):
     """
-    Jitters the color channels between -2 and 2 pixels (selected from uniform 
-    distribution).
-    Input image is a 68x68 image (leaving room for up to 2 pixel jitter).
-    Returned image is cropped down to tile size of 64x64 pixels used to
-    train the network.
+    Takes in the entire image, converts it into a 3D numpy array, and then 
+    jitters the colour channels by between -2 and 2 pixels (to deal with 
+    overfitting to chromatic aberations).
+    Input - a PIL image object with HxW dimensions
+    Output - a (H-4)x(W-x)x3 numpy array (3 colour channels for RGB)
     """
-    #  np.fromstring(image.tobytes(), dtype=np.uint8)
-    source = image.split()
-    RGB = [0,1,2]
-    jitter_image = []
-    for channel in RGB:
-        # Choose a random jitter factor between -2 and 2
-        jitter = random.randrange(5) - 2
-        jitter_image.append(source[channel].point(lambda i: i + jitter))
-    return_image = Image.merge("RGB",jitter_image)
-    # Crop out the 2 pixel border we preserved for this operation
-    return return_image.crop((2,2,66,66))
+    numpy_image = np.array(image)
+    # Determine the dimensions of the array, minus the crop around the border
+    # of 4 pixels
+    x_dim = numpy_image.shape[0] - 4
+    y_dim = numpy_image.shape[1] - 4
+    # Determine the jitters in all directions
+    R_xjit = random.randrange(5) 
+    R_yjit = random.randrange(5) 
+    G_xjit = random.randrange(5)
+    G_yjit = random.randrange(5)
+    B_xjit = random.randrange(5)
+    B_yjit = random.randrange(5)
+    # Sep
+    red_channel_array = numpy_image[R_xjit:x_dim + R_xjit,R_yjit:y_dim + R_yjit,0]
+    green_channel_array = numpy_image[G_xjit:x_dim + G_xjit,G_yjit:y_dim + G_yjit,1]
+    blue_channel_array = numpy_image[B_xjit:x_dim + B_xjit,B_yjit:y_dim + B_yjit,2]
+    # Put the arrays back together and return it
+    return np.stack((red_channel_array,green_channel_array,blue_channel_array), axis=-1)
 
 
 def create_croppings(image):
@@ -61,12 +70,11 @@ def create_croppings(image):
     return final_crops
 
 
-def main(file_names):
-    for infile in file_names:
-        croppings = create_croppings(Image.open(infile))
-        for i in range(9):
-            croppings[i].save("cropped_{}.jpg".format(i))
-    
+def main():
+    im = Image.open("HOCO.jpg")
+    array = color_channel_jitter(im)
+    im2 = Image.fromarray(array)
+    im2.show()
 
 
 def permutate_images(images, permutation):
@@ -89,5 +97,4 @@ def permutate_images(images, permutation):
     return permutated_images
 
 
-if __name__ == "main":
-    main(sys.argv[1:])
+main()
