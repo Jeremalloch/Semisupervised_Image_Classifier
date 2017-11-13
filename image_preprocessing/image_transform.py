@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import os, sys, random
 import pdb
+import time
 
 
 CROP_SIZE = 225
@@ -68,12 +69,26 @@ def create_croppings(numpy_array):
 
 
 def main():
-    im = Image.open("HOCO.jpg")
-    array = colour_channel_jitter(im)
-    cropped_array = create_croppings(array)
-    for i in range(9):
-        im2 = Image.fromarray(cropped_array[:,:,:,i])
-        im2.show()
+    start_time = time.time()
+    final_crops = np.zeros((TILE_SIZE, TILE_SIZE, 3, 9), dtype='uint8')
+    loop_count = 250
+    file_ = "resized/"
+    for _ in range(loop_count):
+        im = Image.open(file_ + "HOCO.jpg")
+        cropped_array = create_croppings(colour_channel_jitter(im))
+        im = Image.open(file_ + "car_1.jpg")
+        cropped_array = create_croppings(colour_channel_jitter(im))
+        im = Image.open(file_ + "car_2.jpg")
+        cropped_array = create_croppings(colour_channel_jitter(im))
+        im = Image.open(file_ + "car_3.jpg")
+        cropped_array = create_croppings(colour_channel_jitter(im))
+    end_time = time.time()
+    del cropped_array
+    print("Time elapsed {}".format(end_time-start_time))
+    print("Time per image {}".format((end_time-start_time)/(loop_count*4)))
+    #  for i in range(9):
+    #      im2 = Image.fromarray(cropped_array[:,:,:,i])
+    #      im2.show()
 
 
 def permutate_images(images, permutation):
