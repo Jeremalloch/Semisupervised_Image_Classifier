@@ -6,7 +6,6 @@ import pdb
 
 CROP_SIZE = 225
 CELL_SIZE = 75
-PRE_JITTER_TILE_SIZE = 68
 TILE_SIZE = 64
 TILE_LOCATION_RANGE = 10
 
@@ -15,7 +14,7 @@ for infile in sys.argv[1:]:
     im = Image.open(infile)
         
 
-def color_channel_jitter(image):
+def colour_channel_jitter(image):
     """
     Takes in the entire image, converts it into a 3D numpy array, and then 
     jitters the colour channels by between -2 and 2 pixels (to deal with 
@@ -43,38 +42,38 @@ def color_channel_jitter(image):
     return np.stack((red_channel_array,green_channel_array,blue_channel_array), axis=-1)
 
 
-def create_croppings(image):
+def create_croppings(numpy_array):
     """
-    Take in a PIL.Image object and return 9
-    "jigsaw" puzzle subimages that are 64x64
-    pixels
+    Take in a 3D numpy array and a 4D numpy array containing 9 "jigsaw" puzzles.
+    Dimensions of array is 64 (height) x 64 (width) x 3 (colour channels) x 9 (each cropping)
 
     The 3x3 grid is numbered as follows:
     0    1    2
     3    4    5
     6    7    8
     """
-    x_dim, y_dim = image.size
+    y_dim, x_dim = numpy_array.shape[:2]
     # Have the x & y coordinate of the crop
     crop_x = random.randrange(x_dim - CROP_SIZE)
     crop_y = random.randrange(y_dim - CROP_SIZE)
     #  box = (crop_x, crop_y, crop_x + CROP_SIZE, crop_y + CROP_SIZE)
     #  cropped_region = im.crop(box)
-    final_crops = []
+    final_crops = np.zeros((TILE_SIZE, TILE_SIZE, 3, 9), dtype='uint8')
     for row in range(3):
         for col in range(3):
-            x_start = crop_x + col*CELL_SIZE + random.randrange(CELL_SIZE - PRE_JITTER_TILE_SIZE )
-            y_start = crop_y + row*CELL_SIZE + random.randrange(CELL_SIZE - PRE_JITTER_TILE_SIZE)
-            box = (x_start, y_start, x_start + PRE_JITTER_TILE_SIZE, y_start + PRE_JITTER_TILE_SIZE)
-            final_crops.append(color_channel_jitter(image.crop(box)))
+            x_start = crop_x + col*CELL_SIZE + random.randrange(CELL_SIZE - TILE_SIZE)
+            y_start = crop_y + row*CELL_SIZE + random.randrange(CELL_SIZE - TILE_SIZE)
+            final_crops[:,:,:,row*3 + col] = numpy_array[y_start:y_start + TILE_SIZE, x_start:x_start + TILE_SIZE,:]
     return final_crops
 
 
 def main():
     im = Image.open("HOCO.jpg")
-    array = color_channel_jitter(im)
-    im2 = Image.fromarray(array)
-    im2.show()
+    array = colour_channel_jitter(im)
+    cropped_array = create_croppings(array)
+    for i in range(9):
+        im2 = Image.fromarray(cropped_array[:,:,:,i])
+        im2.show()
 
 
 def permutate_images(images, permutation):
