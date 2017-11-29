@@ -1,3 +1,7 @@
+# Ignore the TODO list
+TODO.md
+# Ignore the dataset directory
+Datasets/
 # Ignore all sample images
 *.jpg
 
