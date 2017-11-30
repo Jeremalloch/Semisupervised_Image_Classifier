@@ -1,23 +1,26 @@
-import keras
-from keras.applications.vgg16 import VGG16
-from keras.layers import Conv2D, MaxPooling2D, Input
+from keras.layers import Dense, Concatenate, Dropout
 from keras.models import Model
+import resnetBottom
 
-# Size of jigsaw piece
-TILE_SIZE = 64
-NUM_PUZZLES = 9
+def contextFreeNetwork(tileSize=64, numPuzzles=9):
+    """
+    Implemented non-siamese
+    tileSize - The dimensions of the jigsaw input
+    numPuzzles - the number of jigsaw puzzles
 
+    returns a keras model
+    """
+    inputShape = (tileSize, tileSize, 3)
+    modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
+    sharedLayers = [ResNet34Bottom(inputTensor,inputShape) for inputTensor in modelInputs]
+    x = Concatenate(sharedLayers, axis=-1) # Reconsider what axis to merge
+    x = Dense(1024,activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(100,activation='softmax')(x)
+    model = Model(inputs=modelInputs, outputs = x)
 
-input_shape = (TILE_SIZE, TILE_SIZE, 3)
-input_images = [Input(input_shape) for _ in range(NUM_PUZZLES)]
+    return model
 
-# model to use is going to be preferably ResNet-18, then maybe Inception-V1, then maybe ResNet-50 if I can't get
-# either of the first ones working
-#  conv_model = VGG16(include_top=False, weights=None, input_tensor=input_image, input_shape=input_shape)
-
-
-
-# To train on data set too large to put in memory
 model.train_on_batch()
 
 checkpointer = ModelCheckpoint(filepath='/tmp/weights.hdf5', verbose=1, save_best_only=True)

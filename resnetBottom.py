@@ -1,27 +1,5 @@
-from keras.layers import Dense
-from keras.layers import Input
-from keras.layers import Activation
-from keras.layers import Flatten
-from keras.layers import Conv2D
-from keras.layers import MaxPooling2D
-from keras.layers import AveragePooling2D
-from keras.layers import GlobalAveragePooling2D
-from keras.layers import GlobalMaxPooling2D
-from keras.layers import BatchNormalization
-from keras.models import Model
-from keras.optimizers import SGD,Adam
-#  import warnings
-
-
-class Model(inputs):
-    """
-    Creates a Keras model for a multi-input CNN used for
-    jigsaw puzzle unsupervised learning
-    """
-    x = Conv2D(64,(7,7), strides=(2,2), padding='same', name='input_conv')(input)
-    x = BatchNormalization()(x)
-    model = Model()
-
+from keras.layers import Dense, Input, Activation, Flatten, Conv2D, 
+                            MaxPooling2D, BatchNormalization, Model
 
 def residualMapping(inputTensor, filters):
     """
