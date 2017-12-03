@@ -4,6 +4,7 @@ TODO.md
 Datasets/
 # Ignore all sample images
 *.jpg
+image_stats/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
