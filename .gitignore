@@ -2,6 +2,7 @@
 TODO.md
 # Ignore the dataset directory
 Datasets/
+images/
 # Ignore all sample images
 *.jpg
 image_stats/
