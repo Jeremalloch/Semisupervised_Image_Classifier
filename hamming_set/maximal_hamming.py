@@ -1,6 +1,7 @@
 import itertools
-import random
+import random, sys
 import time
+from time import strftime, localtime
 import numpy as np
 from numba import vectorize, njit, prange, jit, u1
 
@@ -58,19 +59,44 @@ def gen_max_hamming_set(N):
                 D[j,k] = hamming_distance(max_hamming_sets[j], full_permutation_set[k])
         b1 = time.time()
         print("Took {} seconds to calculate hamming distances".format(b1-a1))
-        j = np.max(np.sum(D, axis=0))
+        #  j = np.max(np.sum(D, axis=0))
+        # Should be the index j was found at
+        j = np.argmax(np.sum(D, axis=0))
+
         # Since the dimension of D are ix(NUM_PERMUTATIONS-i), zero out the NUM_PERMUTATIONS-i column
         # since its no longer part of the matrix, shouldn't be considered when determining j
-        D[:,NUM_PERMUTATIONS - (i + 1)] = np.zeros((25), dtype=np.uint8)
+        D[:,NUM_PERMUTATIONS - (i + 1)] = np.zeros((N), dtype=np.uint8)
 
         b = time.time()
         print("Took {} seconds to run loop once".format(b-a))
 
     return max_hamming_sets
 
-num_permutations = 25
-a = time.time()
-B = gen_max_hamming_set(num_permutations)
-b = time.time()
 
-print("Took {} seconds to generate {} permutations".format(b-a,num_permutations))
+def main(num_permutations=25):
+    """
+    Main function to generate hamming_distance set
+    """
+
+    start_time = time.time()
+    permutations = gen_max_hamming_set(num_permutations)
+    end_time = time.time()
+    print("Took {} seconds to generate {} permutations".format(end_time - start_time, num_permutations))
+
+    print(permutations)
+
+    output_name = "maxHammingSet_of_{}_on_{}.txt".format(num_permutations, strftime("%b_%d_%H:%M:%S", localtime()))
+
+    with open(output_name, 'w') as f:
+        for row in permutations:
+            for number in row:
+                f.write("{} ".format(number))
+            f.write("\n")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        main(int(sys.argv[1]))
+    else:
+        print("Number of permutations not specified, using 25")
+        main()

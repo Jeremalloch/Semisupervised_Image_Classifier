@@ -7,6 +7,10 @@ images/
 *.jpg
 image_stats/
 
+# Ignore generated max hamming sets
+hamming_set/*.txt
+hamming_set/*.cpp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

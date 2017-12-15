@@ -42,7 +42,6 @@ if TO_FILE:
             f.write("Mean: {} STD: {}\n".format(mean_sum[i],std_sum[i]))
         f.write("There were {} non RGB images out of a total dataset size of {}\n".format(total_non_RGB,len(files)))
         f.write("Elapsed time: {}\n".format(end_time - start_time))
-        f.close()
 else:
     for i in range(3):
         print("For colour channel {}".format(i))

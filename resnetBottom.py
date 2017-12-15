@@ -1,5 +1,7 @@
-from keras.layers import Dense, Input, Activation, Flatten, Conv2D, 
-                            MaxPooling2D, BatchNormalization, Model
+from keras.layers import (Dense, Input, Activation, Flatten, Conv2D, 
+        MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
+from keras.models import Model
+from keras import backend as K
 
 def residualMapping(inputTensor, filters):
     """
@@ -11,15 +13,15 @@ def residualMapping(inputTensor, filters):
     else:
         bn_axis = 1
 
-    x = Conv2D(filters, (3,3))
+    x = Conv2D(filters, (3,3), padding='same')(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters, (3,3))
+    x = Conv2D(filters, (3,3), padding='same')(x)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = layers.add([x, inputTensor])
+    x = add([x, inputTensor])
     x = Activation('relu')(x)
 
     return x
@@ -34,22 +36,22 @@ def downsizeMapping(inputTensor, filters):
         bn_axis = 3
     else:
         bn_axis = 1
-    x = Conv2D(filters, (3,3), strides=(2,2))
+    x = Conv2D(filters, (3,3), strides=(2,2), padding='same')(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters, (3,3))
+    x = Conv2D(filters, (3,3), padding='same')(x)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    inputTensor = Conv2D(filters, (1,1), strides=(1,1))
-    x = layers.add([x, inputTensor])
+    inputTensor = Conv2D(filters, (1,1), strides=(2,2))(inputTensor)
+    x = add([x, inputTensor])
     x = Activation('relu')(x)
 
     return x
 
 
-def ResNet34Bottom(inputTensor, inputShape):
+def ResNet34Bottom(inputShape):
     """
     Creates a stack of layers equivalent to ResNet-34 architecture up until the
     average pool and 1000-d fully connected layer.
@@ -63,10 +65,12 @@ def ResNet34Bottom(inputTensor, inputShape):
     #  if (inputShape[0] != inputShape[1]):
     #      warnings.warn("Image input shape was non-square", Warning)
 
+    inputTensor = Input(inputShape)
+
     x = Conv2D(64, (7,7), strides=(2, 2), padding='same')(inputTensor)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
-    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
+    x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
     x = downsizeMapping(x, 64)
     x = residualMapping(x, 64)
@@ -88,7 +92,23 @@ def ResNet34Bottom(inputTensor, inputShape):
     x = residualMapping(x, 512)
     x = residualMapping(x, 512)
 
-    dimReduc = 32 # We halve dimensions 5 times, hence 2^5 = 32
-    x = AveragePooling2D((inputShape[0]/dimReduc, inputShape[1]/dimReduc))(x)
+    x = GlobalAveragePooling2D()(x)
 
-    return x
+    model = Model(inputTensor, x, name='ResNet34Bottom')
+    return model
+
+
+def test():
+    """
+    """
+    inputShape = (64,64,3)
+    inputTensor = Input(inputShape)
+    premodel = ResNet34Bottom(inputShape)
+    premodel = premodel(inputTensor)
+    out = Dense(1, activation='sigmoid')(premodel)
+    model = Model(inputTensor, out)
+    model.summary()
+
+
+if __name__ == "__main__":
+    test()

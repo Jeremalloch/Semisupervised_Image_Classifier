@@ -1,5 +1,6 @@
-from keras.layers import Dense, Concatenate, Dropout
+from keras.layers import Dense, Concatenate, Dropout, Input, Conv2D
 from keras.models import Model
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 import resnetBottom
 
 def contextFreeNetwork(tileSize=64, numPuzzles=9):
@@ -12,16 +13,35 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9):
     """
     inputShape = (tileSize, tileSize, 3)
     modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
-    sharedLayers = [ResNet34Bottom(inputTensor,inputShape) for inputTensor in modelInputs]
-    x = Concatenate(sharedLayers, axis=-1) # Reconsider what axis to merge
-    x = Dense(1024,activation='relu')(x)
+    sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
+    sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
+    x = Concatenate()(sharedLayers) # Reconsider what axis to merge
+    # TODO: Determine how this first 2048 layer affects performance, since it doubles model paramter count
+    x = Dense(2048, activation='relu')(x)
     x = Dropout(0.5)(x)
-    x = Dense(100,activation='softmax')(x)
-    model = Model(inputs=modelInputs, outputs = x)
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(100, activation='softmax')(x)
+    model = Model(inputs=modelInputs, outputs=x)
 
     return model
 
-model.train_on_batch()
 
-checkpointer = ModelCheckpoint(filepath='/tmp/weights.hdf5', verbose=1, save_best_only=True)
-model.fit(x_train, y_train, batch_size=128, epochs=20, verbose=0, validation_data=(X_test, Y_test), callbacks=[checkpointer])
+#  inputShape = (224,224,3)
+#  inputTensor = Input(inputShape)
+#  model = resnetBottom.ResNet34Bottom(inputTensor,inputShape)
+model = contextFreeNetwork()
+model.summary()
+
+#  checkpointer = ModelCheckpoint(filepath='/tmp/weights.hdf5', verbose=1, save_best_only=True)
+#
+#  training_generator =
+#
+#  n_workers = 2
+#
+#  model.fit_generator(generator = training_generator,
+#                      steps_per_epoch = len(partition['train'])//batch_size, # TODO fix
+#                      validation_data = validation_generator,
+#                      validation_steps = len(partition['validation'])//batch_size, #TODO: fix
+#                      workers = n_workers, # How many threads to use on the data generators
+#                      callbacks = [checkpointer])

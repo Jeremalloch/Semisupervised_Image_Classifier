@@ -73,7 +73,7 @@ for img_type, img_list in files_dict.items():
             numpy_image = np.array(im, dtype=np.uint8)
             # Calculate per feature mean and variance on training data only
             if img_type == "train_img":
-                    # Using Welford method for online calculation of mean and variance
+                # Using Welford method for online calculation of mean and variance
                 if index > 0:
                     training_mean_new = training_mean_old + (numpy_image - training_mean_old)/(index + 1)
                     training_variance = training_variance + (numpy_image - training_mean_old)*(numpy_image - training_mean_new)
