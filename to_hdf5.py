@@ -11,7 +11,7 @@ import random
 # more variation
 SIZE = (256,256)
 TEST_RUN = False
-DATA_COMPRESSION = False
+TEST_SUBSET_DATA = True
 
 # TODO: Remove this
 # Determined from running over entire unlabed COCO 2017 image dataset overnight
@@ -29,10 +29,6 @@ files = glob.glob(directory + "*.jpg")
 random.shuffle(files)
 # Split data 70% train, 15% validation, 15% test
 files_dict = {}
-files_dict["train_img"] = files[:int(0.7*len(files))]
-files_dict["val_img"] = files[int(0.7*len(files)):int(0.85*len(files))]
-files_dict["test_img"] = files[int(0.85*len(files)):]
-print("Length of files array: {}".format(len(files)))
 
 # Using Welford method for online calculation
 training_mean_new = np.zeros((*SIZE,3), dtype=np.float32)
@@ -40,15 +36,26 @@ training_mean_old = np.zeros((*SIZE,3), dtype=np.float32)
 training_variance = np.zeros((*SIZE,3), dtype=np.float32)
 
 # Create the HDF5 output file
-if DATA_COMPRESSION:
-    hdf5_output = h5py.File(directory + "COCO_2017_unlabeled_compressed.hdf5", mode='w')
+if TEST_SUBSET_DATA:
+    # Create small list of files for training subset of data
+    files_dict["train_img"] = files[:500]
+    files_dict["val_img"] = files[500:750]
+    files_dict["test_img"] = files[750:1000]
+    print("Length of files array: {}".format(len(files)))
+
+    hdf5_output = h5py.File(directory + "COCO_2017_unlabeled_test_dataset.hdf5", mode='w')
     hdf5_output.create_dataset("train_img", (len(files_dict["train_img"]), *SIZE, 3), np.uint8, compression="gzip")
     hdf5_output.create_dataset("val_img", (len(files_dict["val_img"]), *SIZE, 3), np.uint8, compression="gzip")
     hdf5_output.create_dataset("test_img", (len(files_dict["test_img"]), *SIZE, 3), np.uint8, compression="gzip")
     hdf5_output.create_dataset("train_mean", (*SIZE, 3), np.float32, compression="gzip")
     hdf5_output.create_dataset("train_std", (*SIZE, 3), np.float32, compression="gzip")
 else:
-    hdf5_output = h5py.File(directory + "COCO_2017_unlabeled_uncompressed.hdf5", mode='w')
+    files_dict["train_img"] = files[:int(0.7*len(files))]
+    files_dict["val_img"] = files[int(0.7*len(files)):int(0.85*len(files))]
+    files_dict["test_img"] = files[int(0.85*len(files)):]
+    print("Length of files array: {}".format(len(files)))
+
+    hdf5_output = h5py.File(directory + "COCO_2017_unlabeled.hdf5", mode='w')
     hdf5_output.create_dataset("train_img", (len(files_dict["train_img"]), *SIZE, 3), np.uint8)
     hdf5_output.create_dataset("val_img", (len(files_dict["val_img"]), *SIZE, 3), np.uint8)
     hdf5_output.create_dataset("test_img", (len(files_dict["test_img"]), *SIZE, 3), np.uint8)

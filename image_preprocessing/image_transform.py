@@ -2,12 +2,14 @@ from PIL import Image
 import numpy as np
 import sys, random
 import time
-from numba import vectorize, njit, prange, jit, u1
+import itertools
+import warnings
+#  from numba import vectorize, njit, prange, jit, u1
 
 # TODO: Consider adding numba to speed up some functions if need be
 
 
-class JigsawCreator(self):
+class JigsawCreator:
     """
     Creates an image processor that converts an image passed as a numpy array
     into 9 subimages, applies processing to them to improve the generalization
@@ -79,7 +81,7 @@ class JigsawCreator(self):
         6    7    8
         """
         # Jitter the colour channel
-        numpy_array = colour_channel_jitter(numpy_array)
+        numpy_array = self.colour_channel_jitter(numpy_array)
 
         y_dim, x_dim = numpy_array.shape[:2]
         # Have the x & y coordinate of the crop
@@ -87,36 +89,14 @@ class JigsawCreator(self):
         crop_y = random.randrange(y_dim - self.cropSize)
         # Select which image ordering we'll use from the maximum hamming set
         perm_index = random.randrange(self.numPermutations)
-        # TODO: Consider performance between these two
         final_crops = np.zeros((self.tileSize, self.tileSize, 3, 9), dtype=np.float32)
-        #  final_crops = [np.zeros((self.tileSize, self.tileSize, 3), dtype=np.float32) for _ in range(9)]
         for row in range(3):
             for col in range(3):
                 x_start = crop_x + col*self.cellSize + random.randrange(self.cellSize - self.tileSize)
                 y_start = crop_y + row*self.cellSize + random.randrange(self.cellSize - self.tileSize)
                 # Put the crop in the list of pieces randomly according to the number picked
                 final_crops[:,:,:,self.maxHammingSet[perm_index,row*3 + col]] = numpy_array[y_start:y_start + self.tileSize, x_start:x_start + self.tileSize,:]
-        return final_crops, permutation_index
-
-
-    def permutate_images(self, images, permutation):
-        """
-        Receives a list of images and a list of integers describing the permutation
-        to put the images into
-        """
-        # Sorting in place a WIP, just making new array now
-        #  for index, perm_index in range(9):
-        #      if index != perm_index:
-        #          temp = images[index]
-        #          temp_index = permutation.index(index)
-        #          images[index] = images[perm_index]
-        #          images[temp_index] = temp
-        #          # Set the permutation index equal
-        #          permutation[perm_index] = index
-        permutate_images = []
-        for index in permutation:
-            permutate_images.append(images[index])
-        return permutated_images
+        return final_crops, perm_index
 
 
 # TODO: Fix up

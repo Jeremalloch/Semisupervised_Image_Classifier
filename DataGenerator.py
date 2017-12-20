@@ -4,8 +4,9 @@ import numpy as np
 from image_preprocessing import image_transform
 import itertools
 import warnings
+import pdb
 
-class DataGenerator(self):
+class DataGenerator:
     """
     Class for a generator that reads in data from the HDF5 file, one batch at
     a time, converts it into the jigsaw, and then returns the data
@@ -21,8 +22,8 @@ class DataGenerator(self):
         self.numChannels = numChannels
         self.numCrops = numCrops
         self.batchSize = batchSize
-        self.meanTensor = meanTensor
-        self.stdTensor = stdTensor
+        self.meanTensor = meanTensor.astype(np.float32)
+        self.stdTensor = stdTensor.astype(np.float32)
         if maxHammingSet == None:
             warnings.warn("Did not pass a set of jigsaw orientations", UserWarning)
             temp = list(itertools.permutations(range(9),9))
@@ -42,10 +43,12 @@ class DataGenerator(self):
         dataset - an HDF5 dataset (either train or validation)
         """
         # Determine which jigsaw permutation to use
-        jigsawPermutationIndex = random.randint(self.numJigsawTypes)
+        jigsawPermutationIndex = random.randrange(self.numJigsawTypes)
         # TODO: Image in dataset is 256x256 - need to create x array
         x = np.empty((self.batchSize, 256, 256, self.numChannels), dtype=np.float32)
-        x = dataset[batchIndex*self.batchSize:(batchIndex+1)*self.batchSize,...]
+        # TODO: consider using read_direct(array, source_sel=None, dest_sel=None) method to avoid
+        # creating intermediary numpy array
+        x = dataset[batchIndex*self.batchSize:(batchIndex+1)*self.batchSize,...].astype(np.float32)
         # subtract mean first and divide by std from training set to 
         # normalize the image
         x -= self.meanTensor
@@ -59,11 +62,13 @@ class DataGenerator(self):
         #  X_i = np.empty((self.xDim, self.yDim, 3, self.numCrops), dtype=np.float32)
         # Python list of 4D numpy tensors for each channel
         X = [np.empty((self.batchSize, self.xDim, self.yDim, self.numChannels), np.float32) for _ in range(self.numCrops)]
-        for i in range(self.batchSize):
+        #  pdb.set_trace()
+        for image_num in range(self.batchSize):
             # Transform the image into its nine croppings
-            X[i], y[i] = self.jigsawCreator.create_croppings(x)
-            #  X[i] = X_i
-
+            # TODO: Fix this transfer
+            single_image, y[image_num] = self.jigsawCreator.create_croppings(x[image_num])
+            for image_location in range(self.numCrops):
+                X[image_location][image_num,:,:,:] = single_image[:,:,:,image_location]
         return X, y
 
 
@@ -83,9 +88,33 @@ class DataGenerator(self):
         batchIndex = 0
         while True:
              # Load data
-            X, y = __data_generation_normalize(dataset, batchIndex)
+            X, y = self.__data_generation_normalize(dataset, batchIndex)
             batchIndex += 1 # Increment the batch index
             if batchIndex == numBatches:
                 # so that batchIndex wraps back and loop goes on indefinitely
                 batchIndex = 0 
-            yield X, sparsify(y)
+            #  pdb.set_trace()
+            yield X, self.sparsify(y)
+            #  yield X, y
+            #  yield X
+
+
+def test():
+    hdf5_path = "Datasets/COCO_2017_unlabeled_test_subset.hdf5"
+    hdf5_file = h5py.File(hdf5_path)
+    normalize_mean = np.array(hdf5_file["train_mean"])
+    normalize_std = np.array(hdf5_file["train_std"])
+    train_dataset = hdf5_file["train_img"]
+    batch_size = 2
+
+    test_gen = DataGenerator(batchSize=batch_size, meanTensor=normalize_mean, stdTensor=normalize_std)
+
+    #  print("dtype: {}".format(test_gen.meanTensor.dtype))
+    for _ in range(2*train_dataset.shape[0]):
+        pdb.set_trace()
+        #  temp = test_gen.generate(train_dataset)
+        X, Y = next(test_gen.generate(train_dataset))
+        #  X = next(test_gen.generate(train_dataset))
+
+if __name__ == "__main__":
+    test()
