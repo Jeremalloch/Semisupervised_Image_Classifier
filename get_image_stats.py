@@ -3,12 +3,14 @@ from time import strftime, localtime
 import glob
 import numpy as np
 from PIL import Image
+import warnings
 
 # Make size slightly larger than the crop size in order to add a little
 # more variation
 SIZE = (256,256)
 TO_FILE = True
 
+warnings.warn("This script is deprecated", UserWarning)
 #  files = glob.glob("./images/*.jpg")
 files = glob.glob("./Datasets/unlabeled2017/*.jpg")
 print("Length of files array: {}".format(len(files)))
@@ -21,7 +23,6 @@ for fileName in files:
     im = Image.open(fileName)
     # Discard black and white images, breaks rest of pipeline
     if (im.mode == 'RGB'):
-        # TODO: Want to resize such that smallest axis is still greater than 225
         #  im.thumbnail(SIZE)
         numpy_image = np.array(im)
         for i in range(3):

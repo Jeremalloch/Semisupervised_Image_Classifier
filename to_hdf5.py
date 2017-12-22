@@ -13,11 +13,6 @@ SIZE = (256,256)
 TEST_RUN = False
 TEST_SUBSET_DATA = True
 
-# TODO: Remove this
-# Determined from running over entire unlabed COCO 2017 image dataset overnight
-MEANS = np.array([119.60528554557193, 113.80782733624036, 103.89157246448366], dtype=np.float32)
-STD = np.array([62.043584831055576, 60.796926785629495, 61.61505847060693], dtype=np.float32)
-
 if TEST_RUN:
     directory = "./images/"
 else:

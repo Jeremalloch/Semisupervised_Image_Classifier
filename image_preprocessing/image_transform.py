@@ -31,7 +31,7 @@ class JigsawCreator:
         self.tileSize = tileSize
         self.colourJitter = colourJitter
         self.tileLocationRange = tileLocationRange
-        if maxHammingSet == None:
+        if not maxHammingSet.any():
             warnings.warn("Did not pass a set of jigsaw orientations", UserWarning)
             temp = list(itertools.permutations(range(9),9))
             self.maxHammingSet = np.array(temp[:100], dtype=np.uint8)

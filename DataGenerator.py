@@ -24,7 +24,7 @@ class DataGenerator:
         self.batchSize = batchSize
         self.meanTensor = meanTensor.astype(np.float32)
         self.stdTensor = stdTensor.astype(np.float32)
-        if maxHammingSet == None:
+        if not maxHammingSet.any():
             warnings.warn("Did not pass a set of jigsaw orientations", UserWarning)
             temp = list(itertools.permutations(range(9),9))
             self.maxHammingSet = np.array(temp[:100], dtype=np.uint8)
@@ -32,6 +32,7 @@ class DataGenerator:
             self.maxHammingSet = np.array(maxHammingSet, dtype=np.uint8)
         # Determine how many possible jigsaw puzzle arrangements there are
         self.numJigsawTypes = self.maxHammingSet.shape[0]
+        print("Jigsaw puzzle size: {}".format(self.numJigsawTypes))
         # Use default options for JigsawCreator
         # TODO: change variable name of max hamming set
         # TODO: Consider inheriting from JigsawCreator
