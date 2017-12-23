@@ -17,8 +17,8 @@ class JigsawCreator:
     to prevent the network just learning to use chromatic aberation).
     The nine sub-images are then passed passe
     """
-    def __init__(self, cropSize=225, cellSize=75, tileSize=64, 
-            tileLocationRange=10, colourJitter=2, maxHammingSet=None):
+    def __init__(self, maxHammingSet, cropSize=225, cellSize=75, tileSize=64, 
+            tileLocationRange=10, colourJitter=2):
         """
         cropSize - the size of the square crop used
         cellSize - the dimensions of each subcell of the crop. Dimensions are
@@ -31,16 +31,16 @@ class JigsawCreator:
         self.tileSize = tileSize
         self.colourJitter = colourJitter
         self.tileLocationRange = tileLocationRange
-        if not maxHammingSet.any():
-            warnings.warn("Did not pass a set of jigsaw orientations", UserWarning)
-            temp = list(itertools.permutations(range(9),9))
-            self.maxHammingSet = np.array(temp[:100], dtype=np.uint8)
-        else:
-            self.maxHammingSet = np.array(maxHammingSet, dtype=np.uint8)
+        #  if not maxHammingSet.any():
+        #      warnings.warn("Did not pass a set of jigsaw orientations", UserWarning)
+        #      temp = list(itertools.permutations(range(9),9))
+        #      self.maxHammingSet = np.array(temp[:100], dtype=np.uint8)
+        #  else:
+        self.maxHammingSet = np.array(maxHammingSet, dtype=np.uint8)
         self.numPermutations = self.maxHammingSet.shape[0]
 
 
-    # TODO: Largest area for permance improvements here
+    # TODO: Largest area for performance improvements here
     def colour_channel_jitter(self, numpy_image):
         """
         Takes in a 3D numpy array and then jitters the colour channels by 
@@ -99,7 +99,6 @@ class JigsawCreator:
         return final_crops, perm_index
 
 
-# TODO: Fix up
 def benchmark(loop_count=250):
     final_crops = np.zeros((self.tileSize, self.tileSize, 3, 9), dtype=np.float32)
 

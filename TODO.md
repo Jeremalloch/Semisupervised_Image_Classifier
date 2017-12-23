@@ -1,11 +1,9 @@
 #TODO
-- Settle on models.  [Link](https://github.com/jcjohnson/cnn-benchmarks) by Justin Johnson (CS231n) makes me think ResNet-18/50 is best bet
+- Settle on models.  [Link](https://github.com/jcjohnson/cnn-benchmarks) by Justin Johnson (CS231n) makes me think ResNet-34/50 is best bet
 input channels with shared weights
-- Begin writing Keras code for multi-channel shared weights (https://keras.io/getting-started/functional-api-guide/)
 
 ### Hamming Distance Code
 - Profile the hamming distance code (low priority, only will be run at start of training)
-- Switch hamming distance to numpy to make it computationally faster
 
 ### Image Processing
 - Use the guidelines in the Alexnet paper (scale image to size, then randomly crop), subtract colour mean

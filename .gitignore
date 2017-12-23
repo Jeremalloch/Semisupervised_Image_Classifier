@@ -7,6 +7,9 @@ images/
 *.jpg
 image_stats/
 
+# Ignore saved weights, etc
+*.hdf5
+
 # Ignore generated max hamming sets
 hamming_set/*.txt
 hamming_set/*.cpp

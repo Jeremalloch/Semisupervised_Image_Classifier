@@ -1,9 +1,9 @@
-from keras.layers import Dense, Concatenate, Dropout, Input, Conv2D, BatchNormalization, MaxPooling2D
-from keras.layers import (Dense, Input, Activation, Flatten, Conv2D, 
+from keras.layers import (Dense, Dropout, Concatenate, Input, Activation, Flatten, Conv2D, 
         MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 from time import strftime, localtime
+import warnings
 import resnetBottom
 from DataGenerator import DataGenerator
 import numpy as np
@@ -89,11 +89,19 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
 
 TEST = True
 USE_MULTIPROCESSING = False
+
+if USE_MULTIPROCESSING:
+    # TODO: optimize how many workers
+    n_workers = 8
+    warnings.warn("Generators are not thread safe!", UserWarning)
+else:
+    n_workers = 1
+
 # Determine if the full, ~125k image dataset, or the 200 image test dataset should be used
 if TEST:
     hdf5_path = "Datasets/COCO_2017_unlabeled_test_subset.hdf5"
     batch_size = 16
-    num_epochs = 1000
+    num_epochs = 10
     hamming_set_size = 10
     model = trivialNet()
 else:
@@ -113,7 +121,6 @@ test_dataset = hdf5_file["test_img"]
 max_hamming_set = hdf5_file["max_hamming_set"]
 
 # TODO: Better name required
-# TODO: Add max hamming set to generator
 thisGen = DataGenerator(batchSize=batch_size, meanTensor=normalize_mean, stdTensor=normalize_std, maxHammingSet=max_hamming_set[:hamming_set_size])
 
 #  TODO: Add csv logger to save validation and more data at each iteration
@@ -127,24 +134,18 @@ model.compile(optimizer='sgd',
               metrics=['accuracy'])
 
 
-if USE_MULTIPROCESSING:
-    # TODO: optimize how many workers
-    n_workers = 8
-else:
-    n_workers = 1
-
 model.fit_generator(generator = thisGen.generate(train_dataset),
                     epochs = num_epochs,
                     steps_per_epoch = train_dataset.shape[0]//batch_size,
                     validation_data = thisGen.generate(val_dataset),
                     validation_steps = val_dataset.shape[0]//batch_size,
-                    max_queue_size = 5,
                     use_multiprocessing = USE_MULTIPROCESSING,
                     workers = n_workers)
                     #  callbacks = [checkpointer, tBoardLogger])
 
-# TODO: Put generator in here
-#  model.evaluate_generator(generator, steps=test_dataset.shape[0]//batch_size, max_queue_size=5, workers=n_workers, use_multiprocessing=USE_MULTIPROCESSING)
+scores = model.evaluate_generator(thisGen.generate(test_dataset), steps=test_dataset.shape[0]//batch_size, workers=n_workers, use_multiprocessing=USE_MULTIPROCESSING)
+
+print(scores)
 
 # TODO: Install pydot and graphviz to visualize model
 #  plot_model(model, to_file='model.png')
