@@ -1,11 +1,12 @@
-from keras.layers import (Dense, Input, Activation, Flatten, Conv2D, 
-        MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
+from keras.layers import (Dense, Input, Activation, Flatten, Conv2D,
+                          MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
 from keras.models import Model
 from keras import backend as K
 
+
 def residualMapping(inputTensor, filters):
     """
-    Residual building block where input and output tensor are the same 
+    Residual building block where input and output tensor are the same
     dimensions
     """
     if K.image_data_format() == 'channels_last':
@@ -13,11 +14,11 @@ def residualMapping(inputTensor, filters):
     else:
         bn_axis = 1
 
-    x = Conv2D(filters, (3,3), padding='same')(inputTensor)
+    x = Conv2D(filters, (3, 3), padding='same')(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters, (3,3), padding='same')(x)
+    x = Conv2D(filters, (3, 3), padding='same')(x)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
@@ -29,22 +30,22 @@ def residualMapping(inputTensor, filters):
 
 def downsizeMapping(inputTensor, filters):
     """
-    Residual building block where input tensor dimensions are halved, but 
+    Residual building block where input tensor dimensions are halved, but
     feature map dimensions double
     """
     if K.image_data_format() == 'channels_last':
         bn_axis = 3
     else:
         bn_axis = 1
-    x = Conv2D(filters, (3,3), strides=(2,2), padding='same')(inputTensor)
+    x = Conv2D(filters, (3, 3), strides=(2, 2), padding='same')(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters, (3,3), padding='same')(x)
+    x = Conv2D(filters, (3, 3), padding='same')(x)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    inputTensor = Conv2D(filters, (1,1), strides=(2,2))(inputTensor)
+    inputTensor = Conv2D(filters, (1, 1), strides=(2, 2))(inputTensor)
     x = add([x, inputTensor])
     x = Activation('relu')(x)
 
@@ -55,7 +56,7 @@ def ResNet34Bottom(inputShape):
     """
     Creates a stack of layers equivalent to ResNet-34 architecture up until the
     average pool and 1000-d fully connected layer.
-    Assumes that the input is a square patch, so that the output is 1x1x512 
+    Assumes that the input is a square patch, so that the output is 1x1x512
     regardless of input dimensions (using average pooling)
     """
     if K.image_data_format() == 'channels_last':
@@ -67,7 +68,7 @@ def ResNet34Bottom(inputShape):
 
     inputTensor = Input(inputShape)
 
-    x = Conv2D(64, (7,7), strides=(2, 2), padding='same')(inputTensor)
+    x = Conv2D(64, (7, 7), strides=(2, 2), padding='same')(inputTensor)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
@@ -101,7 +102,7 @@ def ResNet34Bottom(inputShape):
 def test():
     """
     """
-    inputShape = (64,64,3)
+    inputShape = (64, 64, 3)
     inputTensor = Input(inputShape)
     premodel = ResNet34Bottom(inputShape)
     premodel = premodel(inputTensor)

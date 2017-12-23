@@ -1,6 +1,6 @@
 from keras.layers import Dense, Concatenate, Dropout, Input, Conv2D, BatchNormalization, MaxPooling2D
-from keras.layers import (Dense, Input, Activation, Flatten, Conv2D, 
-        MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
+from keras.layers import (Dense, Input, Activation, Flatten, Conv2D,
+                          MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 import keras.backend as K
@@ -19,27 +19,26 @@ def basicModel(tileSize=64, numPuzzles=9):
     inputShape = (tileSize, tileSize, 3)
     inputTensor = Input(inputShape)
 
-    x = Conv2D(64, (7,7), strides=(2, 2), padding='same')(inputTensor)
+    x = Conv2D(64, (7, 7), strides=(2, 2), padding='same')(inputTensor)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
-    x = Conv2D(64, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(64, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(128, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(128, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(256, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(256, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(512, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(512, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
     x = GlobalAveragePooling2D()(x)
 
     model = Model(inputTensor, x, name='Trivial_Model')
     return model
-
 
 
 def trivialNet(tileSize=64, numPuzzles=9, hammingSetSize=10):
@@ -56,10 +55,12 @@ def trivialNet(tileSize=64, numPuzzles=9, hammingSetSize=10):
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
 
     # TODO: Definitely doesn't work lol
-    L1_distance = lambda x: K.concatenate([[K.abs(x[i]-x[j]) for j in range(i,9)] for i in range(9)])
-    both = merge([encoded_l,encoded_r], mode = L1_distance, output_shape=lambda x: x[0])
+    def L1_distance(x): return K.concatenate(
+        [[K.abs(x[i] - x[j]) for j in range(i, 9)] for i in range(9)])
+    both = merge([encoded_l, encoded_r], mode=L1_distance,
+                 output_shape=lambda x: x[0])
 
-    x = Concatenate()(sharedLayers) # Reconsider what axis to merge
+    x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
     x = Dense(512, activation='relu')(x)
     x = Dense(hammingSetSize, activation='softmax')(x)
     model = Model(inputs=modelInputs, outputs=x)
@@ -80,15 +81,15 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
     # TODO: Determine if euclidian distance 9x9 grid should be used
-    x = Concatenate()(sharedLayers) # Reconsider what axis to merge
+    x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
     # TODO: Determine how this first 2048 layer affects performance, since it doubles model paramter count
     #  x = Dense(2048, activation='relu')(x)
     x = Dropout(0.5)(x)
     x = Dense(1024, activation='relu')(x)
     x = Dropout(0.5)(x)
-    # TODO: Make sure that the number of outputs is equal to the number of permutations
+    # TODO: Make sure that the number of outputs is equal to the number of
+    # permutations
     x = Dense(hammingSetSize, activation='softmax')(x)
     model = Model(inputs=modelInputs, outputs=x)
 
     return model
-

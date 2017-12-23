@@ -1,6 +1,7 @@
 from PIL import Image
 from time import time
-import glob, os
+import glob
+import os
 
 
 directory = "./Datasets/unlabeled2017/"
@@ -16,4 +17,4 @@ for fileName in files:
 
 b = time()
 
-print("{} files removed in {} seconds".format(num_removed, b-a))
+print("{} files removed in {} seconds".format(num_removed, b - a))

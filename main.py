@@ -1,10 +1,12 @@
-from keras.layers import (Dense, Dropout, Concatenate, Input, Activation, Flatten, Conv2D, 
-        MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
+from keras.layers import (Dense, Dropout, Concatenate, Input, Activation, Flatten, Conv2D,
+                          MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 from time import strftime, localtime
-import warnings
+import warnings, os
+import pickle
 import resnetBottom
+from keras.applications.resnet50 import ResNet50
 from DataGenerator import DataGenerator
 import numpy as np
 import h5py
@@ -18,27 +20,26 @@ def basicModel(tileSize=64, numPuzzles=9):
     inputShape = (tileSize, tileSize, 3)
     inputTensor = Input(inputShape)
 
-    x = Conv2D(64, (7,7), strides=(2, 2), padding='same')(inputTensor)
+    x = Conv2D(64, (7, 7), strides=(2, 2), padding='same')(inputTensor)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
-    x = Conv2D(64, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(64, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(128, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(128, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(256, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(256, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(512, (3,3), strides=(2,2), padding='same')(x)
+    x = Conv2D(512, (3, 3), strides=(2, 2), padding='same')(x)
     x = Activation('relu')(x)
 
     x = GlobalAveragePooling2D()(x)
 
     model = Model(inputTensor, x, name='Trivial_Model')
     return model
-
 
 
 def trivialNet(tileSize=64, numPuzzles=9, hammingSetSize=10):
@@ -53,7 +54,7 @@ def trivialNet(tileSize=64, numPuzzles=9, hammingSetSize=10):
     modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
     sharedLayer = basicModel()
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
-    x = Concatenate()(sharedLayers) # Reconsider what axis to merge
+    x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
     x = Dense(512, activation='relu')(x)
     x = Dense(hammingSetSize, activation='softmax')(x)
     model = Model(inputs=modelInputs, outputs=x)
@@ -71,16 +72,20 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     """
     inputShape = (tileSize, tileSize, 3)
     modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
-    sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
+    # TODO: Determine if Resnet-50 should be used instead since it has imagenet weights save
+    #  sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
+    # TODO: If using Resnet-50
+    # sharedLayer = ResNet50(include_top=False, weights='imagenet',
+    # input_tensor=None, input_shape=None, pooling=None, classes=1000)
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
     # TODO: Determine if euclidian distance 9x9 grid should be used
-    x = Concatenate()(sharedLayers) # Reconsider what axis to merge
-    # TODO: Determine how this first 2048 layer affects performance, since it doubles model paramter count
-    #  x = Dense(2048, activation='relu')(x)
+    x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
+    # TODO: Determine how this first 2048 layer affects performance, since it
+    # doubles model paramter count
+    x = Dense(2048, activation='relu')(x)
     x = Dropout(0.5)(x)
     x = Dense(1024, activation='relu')(x)
     x = Dropout(0.5)(x)
-    # TODO: Make sure that the number of outputs is equal to the number of permutations
     x = Dense(hammingSetSize, activation='softmax')(x)
     model = Model(inputs=modelInputs, outputs=x)
 
@@ -93,19 +98,20 @@ USE_MULTIPROCESSING = False
 if USE_MULTIPROCESSING:
     # TODO: optimize how many workers
     n_workers = 8
-    warnings.warn("Generators are not thread safe!", UserWarning)
+    warnings.warn('Generators are not thread safe!', UserWarning)
 else:
     n_workers = 1
 
-# Determine if the full, ~125k image dataset, or the 200 image test dataset should be used
+# Determine if the full, ~125k image dataset, or the 200 image test
+# dataset should be used
 if TEST:
-    hdf5_path = "Datasets/COCO_2017_unlabeled_test_subset.hdf5"
+    hdf5_path = 'Datasets/COCO_2017_unlabeled_test_subset.hdf5'
     batch_size = 16
     num_epochs = 10
     hamming_set_size = 10
     model = trivialNet()
 else:
-    hdf5_path = "Datasets/COCO_2017_unlabeled.hdf5"
+    hdf5_path = 'Datasets/COCO_2017_unlabeled.hdf5'
     batch_size = 64
     num_epochs = 100
     hamming_set_size = 100
@@ -113,40 +119,64 @@ else:
 
 # Open up the datasets
 hdf5_file = h5py.File(hdf5_path)
-normalize_mean = np.array(hdf5_file["train_mean"])
-normalize_std = np.array(hdf5_file["train_std"])
-train_dataset = hdf5_file["train_img"]
-val_dataset = hdf5_file["val_img"]
-test_dataset = hdf5_file["test_img"]
-max_hamming_set = hdf5_file["max_hamming_set"]
+normalize_mean = np.array(hdf5_file['train_mean'])
+normalize_std = np.array(hdf5_file['train_std'])
+train_dataset = hdf5_file['train_img']
+val_dataset = hdf5_file['val_img']
+test_dataset = hdf5_file['test_img']
+max_hamming_set = hdf5_file['max_hamming_set']
 
-# TODO: Better name required
-thisGen = DataGenerator(batchSize=batch_size, meanTensor=normalize_mean, stdTensor=normalize_std, maxHammingSet=max_hamming_set[:hamming_set_size])
+dataGenerator = DataGenerator(batchSize=batch_size, meanTensor=normalize_mean,
+                              stdTensor=normalize_std, maxHammingSet=max_hamming_set[:hamming_set_size])
 
-#  TODO: Add csv logger to save validation and more data at each iteration
-#  weights_filepath="./weights/weights_{}_improvement-{epoch:02d}-{val_acc:.2f}.hdf5".format(strftime("%b %d %H:%M:%S", localtime()))
-#  checkpointer = ModelCheckpoint(weights_filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-#  # Log data to view on tensorboard
-#  tBoardLogger = TensorBoard(log_dir='./logs', histogram_freq=5, batch_size=batch_size, write_graph=True, write_grads=True, write_images=True)
+# Output all data from a training session into a dated folder
+outputPath = './model_data/{}'.format(strftime('%b_%d_%H:%M:%S', localtime()))
+os.makedirs(outputPath)
+checkpointer = ModelCheckpoint(
+    outputPath +
+    '/weights_improvement.hdf5',
+    monitor='val_loss',
+    verbose=1,
+    save_best_only=True)
+reduce_lr_plateau = ReduceLROnPlateau(
+    monitor='val_loss', patience=3, verbose=1)
+early_stop = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
+# tBoardLogger = TensorBoard(log_dir=outputPath, histogram_freq=5,
+# batch_size=batch_size, write_graph=True, write_grads=True,
+# write_images=True)
 
-model.compile(optimizer='sgd',
+model.compile(optimizer='Adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
+history = model.fit_generator(generator=dataGenerator.generate(train_dataset),
+                              epochs=num_epochs,
+                              steps_per_epoch=train_dataset.shape[0] // batch_size,
+                              validation_data=dataGenerator.generate(
+                                  val_dataset),
+                              validation_steps=val_dataset.shape[0] // batch_size,
+                              use_multiprocessing=USE_MULTIPROCESSING,
+                              workers=n_workers)
+                              #  callbacks=[checkpointer])
 
-model.fit_generator(generator = thisGen.generate(train_dataset),
-                    epochs = num_epochs,
-                    steps_per_epoch = train_dataset.shape[0]//batch_size,
-                    validation_data = thisGen.generate(val_dataset),
-                    validation_steps = val_dataset.shape[0]//batch_size,
-                    use_multiprocessing = USE_MULTIPROCESSING,
-                    workers = n_workers)
-                    #  callbacks = [checkpointer, tBoardLogger])
+scores = model.evaluate_generator(
+    dataGenerator.generate(test_dataset),
+    steps=test_dataset.shape[0] //
+    batch_size,
+    workers=n_workers,
+    use_multiprocessing=USE_MULTIPROCESSING)
 
-scores = model.evaluate_generator(thisGen.generate(test_dataset), steps=test_dataset.shape[0]//batch_size, workers=n_workers, use_multiprocessing=USE_MULTIPROCESSING)
+# Output the test loss and accuracy
+print("Test loss: {}".format(scores[0]))
+print("Test accuracy: {}".format(scores[1]))
 
-print(scores)
+# Save the train and val accuracy history to file
+with open(outputPath + '/history.pkl', 'wb') as history_file:
+    pickle.dump(history.history, history_file)
+# Save the test score accuracy
+with open(outputPath + '/test_accuracy.pkl', 'wb') as test_file:
+    pickle.dump(scores, test_file)
 
+model.save(outputPath + '/model.hdf5')
 # TODO: Install pydot and graphviz to visualize model
 #  plot_model(model, to_file='model.png')
-model.save("./saved_model.hdf5")

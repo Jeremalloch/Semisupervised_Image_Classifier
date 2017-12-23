@@ -7,6 +7,8 @@ images/
 *.jpg
 image_stats/
 
+# Ignore saved model outputs
+model_data/
 # Ignore saved weights, etc
 *.hdf5
 
