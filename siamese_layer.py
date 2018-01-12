@@ -57,8 +57,9 @@ def trivialNet(tileSize=64, numPuzzles=9, hammingSetSize=10):
     # TODO: Definitely doesn't work lol
     def L1_distance(x): return K.concatenate(
         [[K.abs(x[i] - x[j]) for j in range(i, 9)] for i in range(9)])
-    both = merge([encoded_l, encoded_r], mode=L1_distance,
-                 output_shape=lambda x: x[0])
+    both = K.concatenate([[K.abs(x[0] - x[j]) for j in range(9)])
+    #  both = K.concatenate([[K.abs(x[i] - x[j]) for j in range(i, 9)] for i in range(9)])
+                 #  output_shape=lambda x: x[0])
 
     x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
     x = Dense(512, activation='relu')(x)
@@ -93,3 +94,10 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     model = Model(inputs=modelInputs, outputs=x)
 
     return model
+
+
+model = trivialNet()
+opt = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999)
+model.compile(optimizer=opt,
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])

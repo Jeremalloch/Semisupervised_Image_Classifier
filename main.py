@@ -2,11 +2,12 @@ from keras.layers import (Dense, Dropout, Concatenate, Input, Activation, Flatte
                           MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
+from keras import optimizers
 from time import strftime, localtime
-import warnings, os
+import warnings
+import os
 import pickle
 import resnetBottom
-from keras.applications.resnet50 import ResNet50
 from DataGenerator import DataGenerator
 import numpy as np
 import h5py
@@ -72,8 +73,9 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     """
     inputShape = (tileSize, tileSize, 3)
     modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
-    # TODO: Determine if Resnet-50 should be used instead since it has imagenet weights save
-    #  sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
+    # TODO: Determine if Resnet-50 should be used instead since it has
+    # imagenet weights save
+    sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
     # TODO: If using Resnet-50
     # sharedLayer = ResNet50(include_top=False, weights='imagenet',
     # input_tensor=None, input_shape=None, pooling=None, classes=1000)
@@ -92,7 +94,7 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     return model
 
 
-TEST = True
+TEST = False
 USE_MULTIPROCESSING = False
 
 if USE_MULTIPROCESSING:
@@ -109,7 +111,8 @@ if TEST:
     batch_size = 16
     num_epochs = 10
     hamming_set_size = 10
-    model = trivialNet()
+    model = contextFreeNetwork(hammingSetSize=10)
+    #  model = trivialNet()
 else:
     hdf5_path = 'Datasets/COCO_2017_unlabeled.hdf5'
     batch_size = 64
@@ -145,7 +148,8 @@ early_stop = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
 # batch_size=batch_size, write_graph=True, write_grads=True,
 # write_images=True)
 
-model.compile(optimizer='Adam',
+opt = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999)
+model.compile(optimizer=opt,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
@@ -156,8 +160,8 @@ history = model.fit_generator(generator=dataGenerator.generate(train_dataset),
                                   val_dataset),
                               validation_steps=val_dataset.shape[0] // batch_size,
                               use_multiprocessing=USE_MULTIPROCESSING,
-                              workers=n_workers)
-                              #  callbacks=[checkpointer])
+                              workers=n_workers,
+                              callbacks=[checkpointer, reduce_lr_plateau, early_stop])
 
 scores = model.evaluate_generator(
     dataGenerator.generate(test_dataset),

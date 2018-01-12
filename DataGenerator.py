@@ -31,6 +31,7 @@ import threading
 #      return g
 
 
+# TODO: Inherit from Sequence keras class, making this paralleziable
 class DataGenerator:
     """
     Class for a generator that reads in data from the HDF5 file, one batch at
@@ -75,8 +76,8 @@ class DataGenerator:
                      dtype=np.float32)
         # TODO: consider using read_direct(array, source_sel=None, dest_sel=None) method to avoid
         # creating intermediary numpy array (HDF5 method)
-        x = dataset[batchIndex *
-                    self.batchSize:(batchIndex + 1) * self.batchSize, ...].astype(np.float32)
+        #  dataset.read_direct(x, source_sel=np.s_[batchIndex * self.batchSize:(batchIndex + 1) * self.batchSize, ...])
+        x = dataset[batchIndex * self.batchSize:(batchIndex + 1) * self.batchSize, ...].astype(np.float32)
         # subtract mean first and divide by std from training set to
         # normalize the image
         x -= self.meanTensor
@@ -130,19 +131,19 @@ class DataGenerator:
 
 
 def test():
-    hdf5_path = "Datasets/COCO_2017_unlabeled_test_subset.hdf5"
+    hdf5_path = "Datasets/COCO_2017_unlabeled.hdf5"
     hdf5_file = h5py.File(hdf5_path)
     normalize_mean = np.array(hdf5_file["train_mean"])
     normalize_std = np.array(hdf5_file["train_std"])
     train_dataset = hdf5_file["train_img"]
     max_hamming_set = hdf5_file["max_hamming_set"]
-    batch_size = 32
+    batch_size = 64
 
     test_gen = DataGenerator(maxHammingSet=max_hamming_set, batchSize=batch_size,
                              meanTensor=normalize_mean, stdTensor=normalize_std)
 
     start = time.time()
-    num_epochs = 25
+    num_epochs = 1
     for _ in range(num_epochs * (train_dataset.shape[0] // batch_size)):
         X, Y = next(test_gen.generate(train_dataset))
     end = time.time()

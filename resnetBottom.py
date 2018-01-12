@@ -1,6 +1,7 @@
 from keras.layers import (Dense, Input, Activation, Flatten, Conv2D,
                           MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, add)
 from keras.models import Model
+from keras.regularizers import l2
 from keras import backend as K
 
 
@@ -14,11 +15,11 @@ def residualMapping(inputTensor, filters):
     else:
         bn_axis = 1
 
-    x = Conv2D(filters, (3, 3), padding='same')(inputTensor)
+    x = Conv2D(filters, (3, 3), padding='same', kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters, (3, 3), padding='same')(x)
+    x = Conv2D(filters, (3, 3), padding='same', kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(x)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
@@ -37,15 +38,16 @@ def downsizeMapping(inputTensor, filters):
         bn_axis = 3
     else:
         bn_axis = 1
-    x = Conv2D(filters, (3, 3), strides=(2, 2), padding='same')(inputTensor)
+    # TODO: Should be 1,1 kernal
+    x = Conv2D(filters, (3, 3), strides=(2, 2), padding='same', kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters, (3, 3), padding='same')(x)
+    x = Conv2D(filters, (3, 3), padding='same', kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(x)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)
 
-    inputTensor = Conv2D(filters, (1, 1), strides=(2, 2))(inputTensor)
+    inputTensor = Conv2D(filters, (1, 1), strides=(2, 2), kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(inputTensor)
     x = add([x, inputTensor])
     x = Activation('relu')(x)
 
@@ -68,7 +70,7 @@ def ResNet34Bottom(inputShape):
 
     inputTensor = Input(inputShape)
 
-    x = Conv2D(64, (7, 7), strides=(2, 2), padding='same')(inputTensor)
+    x = Conv2D(64, (7, 7), strides=(2, 2), padding='same', kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(inputTensor)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
     x = MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)

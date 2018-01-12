@@ -62,15 +62,18 @@ class JigsawCreator:
         B_xjit = random.randrange(self.colourJitter * 2 + 1)
         B_yjit = random.randrange(self.colourJitter * 2 + 1)
         # Seperate the colour channels
-        red_channel_array = numpy_image[R_xjit:x_dim +
-                                        R_xjit, R_yjit:y_dim + R_yjit, 0]
-        green_channel_array = numpy_image[G_xjit:x_dim +
-                                          G_xjit, G_yjit:y_dim + G_yjit, 1]
-        blue_channel_array = numpy_image[B_xjit:x_dim +
-                                         B_xjit, B_yjit:y_dim + B_yjit, 2]
+        return_array = np.empty((x_dim, y_dim, 3), np.float32)
+        for colour_channel in range(3):
+            return_array[:,:,colour_channel] = numpy_image[R_xjit:x_dim +
+                                            R_xjit, R_yjit:y_dim + R_yjit, colour_channel]
+        #  green_channel_array = numpy_image[G_xjit:x_dim +
+        #                                    G_xjit, G_yjit:y_dim + G_yjit, 1]
+        #  blue_channel_array = numpy_image[B_xjit:x_dim +
+        #                                   B_xjit, B_yjit:y_dim + B_yjit, 2]
         # Put the arrays back together and return it
-        return np.stack((red_channel_array, green_channel_array,
-                         blue_channel_array), axis=-1)
+        #  np.stack((red_channel_array, green_channel_array,
+        #                   blue_channel_array), axis=-1)
+        return return_array
 
     #  @jit(u1[:](u1[:],u1[:]))
     def create_croppings(self, numpy_array):
