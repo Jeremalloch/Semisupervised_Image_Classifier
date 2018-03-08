@@ -50,11 +50,6 @@ def gen_max_hamming_set(N):
         full_permutation_set[NUM_PERMUTATIONS -
                              (i + 1)] = np.zeros((1, 9), dtype=np.uint8)
 
-        #  temp = np.empty((NUM_PERMUTATIONS-i,9), dtype=np.uint8)
-        # TODO: Can't do this in place, may as well create new array anyway
-        #  temp = np.zeros((NUM_PERMUTATIONS - (j + 1),9), dtype=np.uint8)
-        #  full_permutation_set[j:] = full_permutation_set[j+1:]
-
         # Loop implementation of hamming distance calculation
         a1 = time.time()
         for j in range(i + 1):

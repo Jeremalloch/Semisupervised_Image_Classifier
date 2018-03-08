@@ -73,16 +73,9 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     """
     inputShape = (tileSize, tileSize, 3)
     modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
-    # TODO: Determine if Resnet-50 should be used instead since it has
-    # imagenet weights save
     sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
-    # TODO: If using Resnet-50
-    # sharedLayer = ResNet50(include_top=False, weights='imagenet',
-    # input_tensor=None, input_shape=None, pooling=None, classes=1000)
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
-    # TODO: Determine if euclidian distance 9x9 grid should be used
     x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
-    # TODO: Determine how this first 2048 layer affects performance, since it
     # doubles model paramter count
     x = Dense(2048, activation='relu')(x)
     x = Dropout(0.5)(x)
@@ -98,7 +91,6 @@ TEST = False
 USE_MULTIPROCESSING = False
 
 if USE_MULTIPROCESSING:
-    # TODO: optimize how many workers
     n_workers = 8
     warnings.warn('Generators are not thread safe!', UserWarning)
 else:
@@ -182,5 +174,3 @@ with open(outputPath + '/test_accuracy.pkl', 'wb') as test_file:
     pickle.dump(scores, test_file)
 
 model.save(outputPath + '/model.hdf5')
-# TODO: Install pydot and graphviz to visualize model
-#  plot_model(model, to_file='model.png')

@@ -7,31 +7,7 @@ import itertools
 import warnings
 import threading
 
-#  class threadsafe_iter:
-#      """Takes an iterator/generator and makes it thread-safe by
-#      serializing call to the `next` method of given iterator/generator.
-#      """
-#      def __init__(self, it):
-#          self.it = it
-#          self.lock = threading.Lock()
-#
-#      def __iter__(self):
-#          return self
-#
-#      def __next__(self):
-#          with self.lock:
-#              return self.it()
-#
-#
-#  def threadsafe_generator(f):
-#      """A decorator that takes a generator function and makes it thread-safe.
-#      """
-#      def g(*a, **kw):
-#          return threadsafe_iter(f(*a, **kw))
-#      return g
 
-
-# TODO: Inherit from Sequence keras class, making this paralleziable
 class DataGenerator:
     """
     Class for a generator that reads in data from the HDF5 file, one batch at
@@ -52,15 +28,9 @@ class DataGenerator:
         self.batchSize = batchSize
         self.meanTensor = meanTensor.astype(np.float32)
         self.stdTensor = stdTensor.astype(np.float32)
-        #  if not maxHammingSet.any():
-        #      warnings.warn("Did not pass a set of jigsaw orientations", UserWarning)
-        #      temp = list(itertools.permutations(range(9),9))
-        #      self.maxHammingSet = np.array(temp[:100], dtype=np.uint8)
-        #  else:
         self.maxHammingSet = np.array(maxHammingSet, dtype=np.uint8)
         # Determine how many possible jigsaw puzzle arrangements there are
         self.numJigsawTypes = self.maxHammingSet.shape[0]
-        # TODO: Consider inheriting from JigsawCreator
         # Use default options for JigsawCreator
         self.jigsawCreator = image_transform.JigsawCreator(
             maxHammingSet=maxHammingSet)
@@ -74,7 +44,6 @@ class DataGenerator:
         jigsawPermutationIndex = random.randrange(self.numJigsawTypes)
         x = np.empty((self.batchSize, 256, 256, self.numChannels),
                      dtype=np.float32)
-        # TODO: consider using read_direct(array, source_sel=None, dest_sel=None) method to avoid
         # creating intermediary numpy array (HDF5 method)
         #  dataset.read_direct(x, source_sel=np.s_[batchIndex * self.batchSize:(batchIndex + 1) * self.batchSize, ...])
         x = dataset[batchIndex * self.batchSize:(batchIndex + 1) * self.batchSize, ...].astype(np.float32)
@@ -82,9 +51,6 @@ class DataGenerator:
         # normalize the image
         x -= self.meanTensor
         x /= self.stdTensor
-        # TODO: Implementation below creates custom cropping for each image in batch. Consider if
-        # better to apply same transformation to all images worth performance increase. This would entail
-        # getting croppings_creator to work on 4D tensors for a batch instead of looping
         # This implementation modifies each image individually
         X = np.empty((self.batchSize, self.xDim, self.yDim,
                       self.numCrops), dtype=np.float32)

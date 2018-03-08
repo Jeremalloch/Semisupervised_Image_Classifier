@@ -5,9 +5,6 @@ import random
 import time
 import itertools
 import warnings
-#  from numba import vectorize, njit, prange, jit, u1
-
-# TODO: Consider adding numba to speed up some functions if need be
 
 
 class JigsawCreator:
@@ -41,7 +38,6 @@ class JigsawCreator:
         self.maxHammingSet = np.array(maxHammingSet, dtype=np.uint8)
         self.numPermutations = self.maxHammingSet.shape[0]
 
-    # TODO: Largest area for performance improvements here
     def colour_channel_jitter(self, numpy_image):
         """
         Takes in a 3D numpy array and then jitters the colour channels by
@@ -115,7 +111,6 @@ def benchmark(loop_count=250):
     final_crops = np.zeros(
         (self.tileSize, self.tileSize, 3, 9), dtype=np.float32)
 
-    # TODO: change this to just a glob
     file_ = "resized/"
     file_paths = [file_ + "HOCO.jpg", file_ + "car_1.jpg",
                   file_ + "car_2.jpg", file_ + "car_3.jpg"]

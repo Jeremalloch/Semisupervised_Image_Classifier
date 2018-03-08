@@ -38,7 +38,6 @@ def downsizeMapping(inputTensor, filters):
         bn_axis = 3
     else:
         bn_axis = 1
-    # TODO: Should be 1,1 kernal
     x = Conv2D(filters, (3, 3), strides=(2, 2), padding='same', kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001))(inputTensor)
     x = BatchNormalization(axis=bn_axis)(x)
     x = Activation('relu')(x)

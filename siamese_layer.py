@@ -54,7 +54,6 @@ def trivialNet(tileSize=64, numPuzzles=9, hammingSetSize=10):
     sharedLayer = basicModel()
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
 
-    # TODO: Definitely doesn't work lol
     def L1_distance(x): return K.concatenate(
         [[K.abs(x[i] - x[j]) for j in range(i, 9)] for i in range(9)])
     both = K.concatenate([[K.abs(x[0] - x[j]) for j in range(9)])
@@ -81,14 +80,11 @@ def contextFreeNetwork(tileSize=64, numPuzzles=9, hammingSetSize=100):
     modelInputs = [Input(inputShape) for _ in range(numPuzzles)]
     sharedLayer = resnetBottom.ResNet34Bottom(inputShape)
     sharedLayers = [sharedLayer(inputTensor) for inputTensor in modelInputs]
-    # TODO: Determine if euclidian distance 9x9 grid should be used
     x = Concatenate()(sharedLayers)  # Reconsider what axis to merge
-    # TODO: Determine how this first 2048 layer affects performance, since it doubles model paramter count
     #  x = Dense(2048, activation='relu')(x)
     x = Dropout(0.5)(x)
     x = Dense(1024, activation='relu')(x)
     x = Dropout(0.5)(x)
-    # TODO: Make sure that the number of outputs is equal to the number of
     # permutations
     x = Dense(hammingSetSize, activation='softmax')(x)
     model = Model(inputs=modelInputs, outputs=x)
